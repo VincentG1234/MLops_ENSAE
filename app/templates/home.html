@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="text-center">
+        <h1 class="display-4">Welcome, {{ user }}!</h1>
+        <p class="lead">This is the home page of your RAG I&SL application.</p>
+        <hr class="my-4">
+        <div class="d-flex justify-content-center">
+            <a href="/upload" class="btn btn-primary btn-lg me-2">Upload Document</a>
+            <a href="/chat" class="btn btn-secondary btn-lg">Start Chatting</a>
+        </div>
+    </div>
+{% endblock %}

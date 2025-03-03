@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Upload a Document</h2>
+
+            {% if message %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endif %}
+
+            <form method="post" action="/upload" enctype="multipart/form-data" class="mb-4">
+                <div class="mb-3">
+                    <label for="file" class="form-label">Choose a File:</label>
+                    <input class="form-control" type="file" id="file" name="file" accept=".pdf,.docx,.txt,.md" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload</button>
+                <button type="reset" class="btn btn-secondary">Cancel</button>
+            </form>
+
+            <hr>
+
+            <h3 class="mt-4">Create the Chroma Database</h3>
+            <p>After uploading your documents, create the Chroma database to enable advanced search and chat
+                functionalities.</p>
+            <form method="post" action="/generate-chroma">
+                <button type="submit" class="btn btn-success">Create Database</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

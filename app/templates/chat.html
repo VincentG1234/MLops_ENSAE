@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 70vw;">
+        <!-- Main Card Container -->
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <!-- Header Section -->
+            <div class="card-body bg-white p-3">
+                <div class="d-flex align-items-center gap-2 mb-3 card-header bg-primary text-white py-2">
+                    <i class="fas fa-comments text-white fs-5"></i>
+                    <h1 class="h4 mb-0">Chat with your documents</h1>
+                </div>
+
+                <!-- Model Selector -->
+                <div class="d-flex align-items-center gap-2 text-secondary">
+                    <i class="fas fa-robot"></i>
+                    <label for="model-select" class="form-label mb-0">Choose your LLM agent:</label>
+                </div>
+                <select id="model-select" class="form-select mt-2" style="width: 100%; max-width: 300px;">
+                    <option value="gpt-4-turbo" selected>GPT-4 Turbo (Recommended)</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </select>
+                <div style="width:100%; height:1px;" class="bg-primary"></div>
+
+
+            </div>
+
+            <!-- Chat History Section -->
+            <div class="card rounded-0 border-0">
+                <div class="card-body p-3 custom-scrollbar" style="height: 40vh; overflow-y: auto;" id="chat-window">
+                    {% for message in chat_history %}
+                        {% if message.sender == 'user' %}
+                            <div class="mb-3 text-end">
+                                <div class="d-inline-block bg-primary text-white px-3 py-2 rounded-pill">
+                                    {{ message.question }}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="mb-3">
+                                <div class="bg-light p-3 rounded-4">
+                                    {{ message.answer | safe }}
+
+                                    {% if message.sources %}
+                                        <div class="mt-3 pt-2 border-top">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fas fa-book text-secondary"></i>
+                                                <strong>Sources:</strong>
+                                            </div>
+                                            <div class="ms-3 mt-1">
+                                                {% for source in message.sources %}
+                                                    <div class="d-flex align-items-center gap-2 text-secondary">
+                                                        <i class="fas fa-angle-right small"></i>
+                                                        <span>{{ source }}</span>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if error %}
+                        <div class="alert alert-danger">
+                            {{ error }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="card-footer bg-white border-0 p-3">
+                <form method="post" action="/chat" id="chat-form">
+                    <input type="hidden" name="model_name" id="hidden-model-name" value="gpt-4-turbo">
+                    <div class="input-group">
+                    <textarea
+                            class="form-control"
+                            id="question"
+                            name="question"
+                            rows="1"
+                            placeholder="Type your question..."
+                            required
+                    ></textarea>
+                        <button type="submit" class="btn btn-primary px-3">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Scroll to bottom of chat
+        function scrollToBottom() {
+            const chatWindow = document.getElementById("chat-window");
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        scrollToBottom();
+
+        // Auto-resize textarea
+        const textarea = document.getElementById('question');
+        textarea.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Update hidden model field
+        document.getElementById('model-select').addEventListener('change', function () {
+            document.getElementById('hidden-model-name').value = this.value;
+        });
+
+        // Handle form submission
+        document.getElementById('chat-form').addEventListener('submit', function () {
+            setTimeout(() => {
+                this.reset();
+                textarea.style.height = 'auto';
+            }, 100);
+        });
+    </script>
+{% endblock %}
