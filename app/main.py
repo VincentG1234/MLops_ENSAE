@@ -1,6 +1,4 @@
 # main.py
-
-import atexit
 import logging
 import os
 import uuid
@@ -11,15 +9,26 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 # For database creation (doc to embeddings and chunks)
-from create_database import generate_data_store
+from backend.database.create_database import generate_data_store
 # for upload documents and convert them to MD
-from file_upload import upload_doc, delete_files
+from backend.services.file_upload import upload_doc, delete_files
 # For chatbot
-from query_data import query_database_agent
-from user_auth import init_firebase, login_user, register_user
+from backend.database.query_data import query_database_agent
+from backend.auth.user_auth import init_firebase, login_user, register_user
+from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
 
-CHROMA_PATH = "chroma"
-DATA_PATH = "uploads"
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Donne "app/"
+DATA_PATH = os.path.join(BASE_DIR, "backend", "uploads")  # Assure "app/backend/uploads"
+FAISS_PATH = os.path.join(BASE_DIR, "backend", "FAISS")  # Assure "app/backend/FAISS"
+
+# Vérifier et créer les dossiers si nécessaire
+os.makedirs(DATA_PATH, exist_ok=True)
+
+print("Chemin DATA_PATH:", DATA_PATH, flush=True)
+
+
 
 # Configure logging
 logging.basicConfig(
@@ -27,6 +36,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
 # Initialiser Firebase
 init_firebase()
 
@@ -38,21 +48,24 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Configurer le répertoire des templates
 templates = Jinja2Templates(directory="templates")
 
-# Fonction à exécuter à la sortie
-atexit.register(delete_files)
-
 # Suppression des fichiers temporaires au démarrage de l'application 
 @app.on_event("startup")
 async def startup_event():
     logger.info("Application starting, deleting files...")
     delete_files()
+    print(os.getcwd(), flush=True)
+    MODEL_EMBEDDING = AutoModel.from_pretrained("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
+    TOKENIZER_EMBEDDING =  AutoTokenizer.from_pretrained("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    print("❌ L'application FastAPI s'arrête...")
+    delete_files()
 
 # Dépendance pour obtenir l'utilisateur actuel à partir des cookies
 def get_current_user(request: Request):
     user = request.cookies.get('user')
     return user
-
 
 
 # Route d'accueil
@@ -110,6 +123,7 @@ async def upload_get(request: Request, user: str = Depends(get_current_user)):
 async def upload_post(request: Request, file: UploadFile = File(...), user: str = Depends(get_current_user)):
     if not user:
         return RedirectResponse(url="/login")
+    
     message = upload_doc(file)
     return templates.TemplateResponse("upload.html", {"request": request, "message": message, "user": user})
 
@@ -179,7 +193,10 @@ async def chat_post(request: Request, question: str = Form(...), user: str = Dep
 
     try:
         # Process the question
-        result = query_database_agent(question, chat_history=chat_history, model_name=model_name)
+        result = query_database_agent(query_text= question,
+                                       chat_history=chat_history,
+                                      tokenizer_embedding=TOKENIZER_EMBEDDING,
+                                       model_embedding=MODEL_EMBEDDING)
 
         # Check if result is an error message or a proper response
         if isinstance(result, str):
@@ -212,8 +229,8 @@ async def logout(request: Request):
     return response
 
 
-# Generate Chroma data base
-@app.post("/generate-chroma")
+# Generate faiss data base
+@app.post("/generate-faiss")
 async def execute_function(request: Request, user: str = Depends(get_current_user)):
     if not user:
         return RedirectResponse(url="/login")
@@ -234,5 +251,5 @@ async def execute_function(request: Request, user: str = Depends(get_current_use
     # Return the result back to the template
     return templates.TemplateResponse(
         "upload.html",
-        {"request": request, "message": f"The Chroma databasis has been created with success", "user": user}
+        {"request": request, "message": f"The faiss databasis has been created with success", "user": user}
     )

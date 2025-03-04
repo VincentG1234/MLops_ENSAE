@@ -1,5 +1,4 @@
 # file_upload.py
-
 import os
 import shutil
 import time
@@ -11,8 +10,8 @@ import sqlite3
 import psutil
 
 
-CHROMA_PATH = "chroma"
-DATA_PATH = "uploads"
+FAISS_PATH = "./backend/FAISS"
+DATA_PATH = "./backend/uploads"
 
 
 def convert_to_md(file_path):
@@ -108,9 +107,9 @@ def delete_files():
     """
     time.sleep(2)  # Wait for the database to be closed
     try:
-        if os.path.exists(CHROMA_PATH):
-            shutil.rmtree(CHROMA_PATH, onerror=handle_remove_readonly)
-            print("Chroma files deleted")
+        if os.path.exists(FAISS_PATH):
+            shutil.rmtree(FAISS_PATH, onerror=handle_remove_readonly)
+            print("FAISS files deleted")
         if os.path.exists(DATA_PATH):
             shutil.rmtree(DATA_PATH, onerror=handle_remove_readonly)
             print("Data files deleted")
