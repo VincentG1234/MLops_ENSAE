@@ -24,7 +24,7 @@ DATA_PATH = "./backend/uploads"
 def main():
     generate_data_store()
 
-def generate_data_store():
+def generate_data_store(model=None, tokenizer=None):
     documents = load_documents()
     print("document load for generate database")
 
@@ -33,7 +33,7 @@ def generate_data_store():
 
     chunks_vectorized = get_embedding_matrix(chunks, model, tokenizer)
 
-    save_to_faiss(chunks_vectorized)
+    save_to_faiss(chunks, chunks_vectorized)
     print("chunks save to faiss")
 
 
@@ -43,10 +43,11 @@ def load_documents():
     return documents
 
 
-def split_text(texts, chunk_size=500, overlap=100):
+def split_text(documents, chunk_size=100, overlap=20):
         """Découpe un texte en chunks, d'abord par paragraphes, puis par phrases si nécessaire."""
 
-        for text in texts:
+        for doc in documents:
+            text = doc.page_content
             encoding = tiktoken.get_encoding("cl100k_base")
             paragraphs = text.split("\n\n")  # Séparer par paragraphes
 
@@ -103,7 +104,11 @@ def save_to_faiss(chunks, chunks_vectorized):
         # 📌 Ajouter les vecteurs dans FAISS et sauvegarder
         index = faiss.IndexFlatL2(dimension)
         index.add(chunks_vectorized)
-        faiss.write_index(index, FAISS_PATH)
+
+        if not os.path.exists(FAISS_PATH):
+            os.makedirs(FAISS_PATH)
+
+        faiss.write_index(index, FAISS_PATH+ "/index.faiss")
 
         json.dump(chunks, open(FAISS_PATH + "/chunks.json", "w"))
 

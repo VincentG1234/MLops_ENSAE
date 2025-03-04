@@ -6,13 +6,13 @@ import markdown2
 import json
 import requests
 
+# Set the environment variable to avoid OpenMP runtime conflict
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
 import numpy as np
 # from dataclasses import dataclass
-from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 import faiss
 
@@ -30,9 +30,6 @@ Vous êtes un assistant qui répond aux questions basées sur le contexte suivan
 
 --------------------------------------------
 
-Historique du chat :
-{history}
-
 Question :
 {question}
 
@@ -40,7 +37,7 @@ Répondez à la question en vous basant uniquement sur le contexte et l'historiq
 """
 
 
-def query_database_agent(query_text= None, model_embedding = None, tokenizer_embedding = None, tokenizer_chat= None, model_chat= None, chat_history= None):
+def query_database_agent(query_text= None, model_embedding = None, tokenizer_embedding = None, chat_history= None):
     
     # Load the index and the chunks
     index = faiss.read_index(f"{FAISS_PATH}/index.faiss")
@@ -71,27 +68,31 @@ def query_database_agent(query_text= None, model_embedding = None, tokenizer_emb
 
     # Generate the prompt
     prompt = PROMPT_TEMPLATE.format(context=context_text, history=history_text, question=query_text)
+    print( "Prompt generated:", prompt)
     
     # Generate the answer
     payload = {
         "model": "tinyllama",
-        "prompt": prompt
+        "prompt": prompt,
+        "max_tokens": 250,
     }
-    response = requests.post(OLLAMA_URL, json=payload)
+    response = requests.post(OLLAMA_URL, json=payload, stream=True)
     print("Answer generated.")
-    
-    return response.json()["response"]
+    print("Response:", response)
+    answer = format_response(response)
+    print("Answer:", answer)
+    return answer
    
 
 def encode_query(query, model_embedding=None, tokenizer_embedding=None):
     """Encode une requête en utilisant un modèle d'embedding."""
-    query_encoded = model_embedding.encode(query, model_embedding= model_embedding, tokenizer_embedding=tokenizer_embedding)
+    query_encoded = encode(query, model_embedding, tokenizer_embedding)
     return np.array(query_encoded, dtype=np.float32).reshape(1, -1)  # Transformer en 2D
 
 def search_knn(index, query_vector, n, k=3):
     """Effectue une recherche KNN dans FAISS."""
     distances, indices = index.search(query_vector, k)
-    return get_adjacent_numbers(indices[0], n)  # Retourne les indices des passages les plus pertinents
+    return indices[0]  # Retourne les indices des passages les plus pertinents
 
 def get_adjacent_numbers(numbers, n):
     """Prend une liste de x entiers et retourne ces entiers avec leurs voisins adjacents entre 0 et n."""
@@ -105,6 +106,19 @@ def get_adjacent_numbers(numbers, n):
     
     return sorted(result)
 
+def format_response(response):
+    # Initialize a variable to store the final response
+    final_response = ""
 
-if __name__ == "__main__":
-    main()
+    # Process the stream of JSON objects
+    for line in response.iter_lines():
+        if line:
+            try:
+                json_object = json.loads(line)
+                if json_object.get("done", False):
+                    final_response = json_object["response"]
+                    break
+            except json.JSONDecodeError as e:
+                print("Error decoding JSON:", e)
+                print("Line content is not valid JSON:", line)
+    return final_response

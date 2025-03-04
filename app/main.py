@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
 
 # For database creation (doc to embeddings and chunks)
 from backend.database.create_database import generate_data_store
@@ -15,8 +16,6 @@ from backend.services.file_upload import upload_doc, delete_files
 # For chatbot
 from backend.database.query_data import query_database_agent
 from backend.auth.user_auth import init_firebase, login_user, register_user
-from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
-
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Donne "app/"
@@ -28,7 +27,11 @@ os.makedirs(DATA_PATH, exist_ok=True)
 
 print("Chemin DATA_PATH:", DATA_PATH, flush=True)
 
-
+print("Loading models for embeddings...", flush=True)
+# Load the model and tokenizer
+MODEL_EMBEDDING = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+TOKENIZER_EMBEDDING =  AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+print("Models for embeddings loaded successfully", flush=True)
 
 # Configure logging
 logging.basicConfig(
@@ -54,8 +57,7 @@ async def startup_event():
     logger.info("Application starting, deleting files...")
     delete_files()
     print(os.getcwd(), flush=True)
-    MODEL_EMBEDDING = AutoModel.from_pretrained("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
-    TOKENIZER_EMBEDDING =  AutoTokenizer.from_pretrained("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
+    
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -207,7 +209,6 @@ async def chat_post(request: Request, question: str = Form(...), user: str = Dep
         chat_history.append({
             'sender': 'assistant',
             'answer': result.get('answer', ''),
-            'sources': result.get('sources', [])
         })
 
         # Save chat history
@@ -236,7 +237,7 @@ async def execute_function(request: Request, user: str = Depends(get_current_use
         return RedirectResponse(url="/login")
 
     # Vérifie si le répertoire "uploads" existe. S'il n'existe pas, retourne un message d'erreur à l'user pour lui dire de téléverser un document
-    upload_directory = "./uploads"
+    upload_directory = "./backend/uploads"
     if not os.path.exists(upload_directory):
         return templates.TemplateResponse(
             "upload.html",
@@ -246,10 +247,10 @@ async def execute_function(request: Request, user: str = Depends(get_current_use
         )
 
     # Générer la base de données
-    result = generate_data_store()
+    result = generate_data_store(MODEL_EMBEDDING, TOKENIZER_EMBEDDING)
 
     # Return the result back to the template
     return templates.TemplateResponse(
         "upload.html",
-        {"request": request, "message": f"The faiss databasis has been created with success", "user": user}
+        {"request": request, "message": f"The faiss database has been created with success", "user": user}
     )
