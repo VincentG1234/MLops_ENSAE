@@ -69,12 +69,13 @@ docker run -p 8000:8000 chatdoc
 
 ## ⚙️ Configuration
 
-1. **Environment Variables**
-In the following versions, if we want the repo to be public, we will add a .env and one will be able to plug directly its own OpenAI API key. To do so, one will need to:
 
-Create a `.env` file in the root directory:
-```env
-OPENAI_API_KEY=your_openai_api_key
+Install Ollama on your computer
+Then execute on a terminal:
+
+```shell
+ollama pull tinyllama
+ollama serve
 ```
 
 ## 🚀 Running the Application

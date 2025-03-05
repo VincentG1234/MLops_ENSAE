@@ -115,8 +115,8 @@ def format_response(response):
         if line:
             try:
                 json_object = json.loads(line)
+                final_response += json_object.get("response", "")
                 if json_object.get("done", False):
-                    final_response = json_object["response"]
                     break
             except json.JSONDecodeError as e:
                 print("Error decoding JSON:", e)
