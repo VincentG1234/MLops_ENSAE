@@ -69,7 +69,7 @@ docker run -p 8000:8000 chatdoc
 
 ## ⚙️ Configuration
 
-
+(if you do not use docker)
 Install Ollama on your computer
 Then execute on a terminal:
 
