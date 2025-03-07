@@ -3,8 +3,12 @@ name: Run Tests
 on:
   push:
     branches: [main]
+    paths:
+      - "app/**/*.py"
   pull_request:
     branches: [main]
+    paths:
+      - "app/**/*.py"       # activation uniquement en cas de changement des *.py
 
 jobs:
   test:
