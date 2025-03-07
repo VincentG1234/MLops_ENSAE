@@ -6,36 +6,38 @@ import markdown2
 import json
 import requests
 
-# Set the environment variable to avoid OpenMP runtime conflict
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-
-OLLAMA_URL = "http://localhost:11434/api/generate"
-
+from dotenv import load_dotenv
 import numpy as np
-# from dataclasses import dataclass
+import google.generativeai as genai
 from langchain.prompts import ChatPromptTemplate
 import faiss
 
 from backend.database.vectorize import encode
 
 
-# Constants
+# Set the environment variable to avoid OpenMP runtime conflict
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
+API_KEY_GOOGLE = os.getenv("API_KEY_GOOGLE")
+load_dotenv()
+key = os.environ.get('API_KEY_GOOGLE')
+genai.configure(api_key=key)
+
 
 FAISS_PATH = "./backend/FAISS"
 
 PROMPT_TEMPLATE = """
-Vous êtes un assistant qui répond aux questions basées sur le contexte suivant :
+You are an assistant that answers questions based on the following context:
 
 {context}
 
 --------------------------------------------
 
-Question :
+Question:
 {question}
 
-Répondez à la question en vous basant uniquement sur le contexte et l'historique fournis.
+Answer the question using only the provided context and history.
 """
-
 
 def query_database_agent(query_text= None, model_embedding = None, tokenizer_embedding = None, chat_history= None):
     
@@ -69,20 +71,15 @@ def query_database_agent(query_text= None, model_embedding = None, tokenizer_emb
     # Generate the prompt
     prompt = PROMPT_TEMPLATE.format(context=context_text, history=history_text, question=query_text)
     print( "Prompt generated:", prompt)
+
     
-    # Generate the answer
-    payload = {
-        "model": "tinyllama",
-        "prompt": prompt,
-        "max_tokens": 250,
-    }
-    response = requests.post(OLLAMA_URL, json=payload, stream=True)
-    print("Answer generated.")
-    print("Response:", response)
-    answer = format_response(response)
-    print("Answer:", answer)
-    return answer
-   
+    # Generate the response via the API
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    response = model.generate_content(prompt)
+
+    return response.text
+    
+    
 
 def encode_query(query, model_embedding=None, tokenizer_embedding=None):
     """Encode une requête en utilisant un modèle d'embedding."""
@@ -92,7 +89,8 @@ def encode_query(query, model_embedding=None, tokenizer_embedding=None):
 def search_knn(index, query_vector, n, k=3):
     """Effectue une recherche KNN dans FAISS."""
     distances, indices = index.search(query_vector, k)
-    return indices[0]  # Retourne les indices des passages les plus pertinents
+    indices_with_neighbors = get_adjacent_numbers(indices[0], n)
+    return indices_with_neighbors  # Retourne les indices des passages les plus pertinents
 
 def get_adjacent_numbers(numbers, n):
     """Prend une liste de x entiers et retourne ces entiers avec leurs voisins adjacents entre 0 et n."""

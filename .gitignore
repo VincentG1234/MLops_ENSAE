@@ -1,3 +1,7 @@
 venv/
 __pycache__/
 uploads/
+test_gemini.py
+.env
+index.faiss
+chunks.json

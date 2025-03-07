@@ -6,7 +6,6 @@ import docx
 # For PDF/wordfile files
 import pdfplumber
 from fastapi import UploadFile
-import sqlite3
 import psutil
 
 

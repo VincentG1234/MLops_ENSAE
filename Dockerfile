@@ -1,38 +1,41 @@
-# Utiliser Python 3.10 sur Alpine
-FROM python:3.10-alpine
+# Use Python 3.10 slim image as base
+FROM python:3.10-slim
 
-# Installer Ollama et les dépendances système
-RUN apk add --no-cache curl bash build-base libffi-dev openssl-dev bzip2-dev \
-    && curl -fsSL https://ollama.com/install.sh | sh \
-    && apk del build-base
-
-# Vérifier les versions installées
-RUN python3 --version && pip3 --version && ollama --version
-
-# Définir le répertoire de travail
+# Set working directory in container
 WORKDIR /app
 
-# Copier les fichiers de dépendances Python
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
-# Installer les dépendances Python
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install "unstructured[md]"
+    && pip install "unstructured[md]" \
+    && pip install --upgrade chromadb numpy
 
-# Copier le code de l'application
+# Copy the application code
 COPY ./app /app/
+COPY .env /app/
 
-# Créer les dossiers nécessaires
+# Create necessary directories
 RUN mkdir -p /app/backend/uploads /app/backend/FAISS
 
-# Assurer les bonnes permissions
+# Set permissions
 RUN chmod -R 755 /app
 
-# Télécharger et préparer le modèle TinyLlama
-RUN ollama pull tinyllama
+# Expose the port the app runs on
+EXPOSE 8000
 
-# Exposer les ports nécessaires
-EXPOSE 8000 11434
-
-# Lancer Ollama et FastAPI en parallèle
-CMD ["sh", "-c", "ollama serve & uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Command to run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
