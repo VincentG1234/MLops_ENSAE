@@ -52,7 +52,6 @@ python -m venv .venv
 ```bash
 pip install -r requirements.txt
 pip install "unstructured[md]"
-pip install --upgrade chromadb numpy
 ```
 
 ### Option 2: Docker Deployment (make sure to start your Docker app before)

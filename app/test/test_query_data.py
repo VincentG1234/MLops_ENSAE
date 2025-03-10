@@ -1,63 +1,57 @@
+import os
+import sys
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, mock_open
+import numpy as np
+import json
 
-from query_data import format_sources, query_database_agent
+# Ajoute app/ et MLops_ENSAE/ au chemin d'import
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-
+from backend.database.query_data import query_database_agent
 class TestQueryData(unittest.TestCase):
     def setUp(self):
-        """Set up test environment"""
-        self.mock_embeddings = Mock()
-        self.mock_db = Mock()
+        """Configuration initiale avant chaque test"""
+        self.mock_faiss = Mock()
+        self.mock_gemini = Mock()
+        self.mock_encode = Mock()
+        self.mock_open = mock_open(read_data=json.dumps(["Chunk 1", "Chunk 2", "Chunk 3"]))
 
-    def test_format_sources(self):
-        """Test the format_sources function"""
-        # Test single source
-        sources = ['uploads\\document1.md']
-        result = format_sources(sources)
-        self.assertEqual(result, 'document1')
+    @patch('backend.database.query_data.open', new_callable=mock_open, create=True)  # Mock `open()` pour chunks.json
+    @patch('backend.database.query_data.faiss.read_index')  # Mock FAISS
+    @patch('backend.database.query_data.genai.GenerativeModel')  # Mock Gemini
+    @patch('backend.database.query_data.encode')  # Mock MiniLM v6 (Hugging Face)
+    def test_query_database_agent(self, mock_encode, mock_gemini, mock_faiss, mock_file):
+        """Test de la fonction query_database_agent"""
 
-        # Test multiple sources with order-independent comparison
-        sources = ['uploads\\document1.md', 'uploads\\document2.md', 'uploads\\document3.md']
-        result = format_sources(sources)
-        result_parts = set(result.replace(' and ', '; ').split('; '))
-        expected_parts = {'document1', 'document2', 'document3'}
-        self.assertEqual(result_parts, expected_parts)
+        # 🟢 Mock du fichier chunks.json
+        mock_file.return_value = self.mock_open()
 
-        # Test duplicate sources
-        sources = ['uploads\\document1.md', 'uploads\\document1.md']
-        result = format_sources(sources)
-        self.assertEqual(result, 'document1')
+        # 🟢 Mock FAISS index
+        mock_faiss_instance = Mock()
+        mock_faiss_instance.search.return_value = (np.array([[0.1, 0.2, 0.3]]), np.array([[0, 1, 2]]))
+        mock_faiss.return_value = mock_faiss_instance
 
-    @patch('query_data.OpenAIEmbeddings')
-    @patch('query_data.Chroma')
-    @patch('query_data.OpenAI')
-    def test_query_database_agent(self, mock_openai, mock_chroma, mock_embeddings):
-        """Test the query_database_agent function"""
-        # Mock the database response
-        mock_doc = Mock()
-        mock_doc.page_content = "Test content"
-        mock_doc.metadata = {"source": "test_source.md"}
-        mock_results = [(mock_doc, 0.8)]
+        # 🟢 Mock l'encodage avec MiniLM v6
+        mock_encode.return_value = np.array([[0.1, 0.2, 0.3]], dtype=np.float32)
 
-        mock_db_instance = Mock()
-        mock_db_instance.similarity_search_with_relevance_scores.return_value = mock_results
-        mock_chroma.return_value = mock_db_instance
+        # 🟢 Mock Gemini API
+        mock_gemini_instance = Mock()
+        mock_gemini_instance.generate_content.return_value = Mock(text="Mocked Gemini response")
+        mock_gemini.return_value = mock_gemini_instance
 
-        # Mock OpenAI response
-        mock_response = Mock()
-        mock_response.choices = [Mock(message=Mock(content="Test response"))]
-        mock_openai_instance = Mock()
-        mock_openai_instance.chat.completions.create.return_value = mock_response
-        mock_openai.return_value = mock_openai_instance
+        # 🟢 Exécution de la fonction avec des paramètres fictifs
+        response = query_database_agent(query_text="test question")
 
-        # Test the function
-        result = query_database_agent("test question")
+        # 🛠️ Vérifications
+        self.assertEqual(response, "Mocked Gemini response")  # Vérifie la réponse de Gemini
+        mock_encode.assert_called_once_with("test question", None, None)  # Vérifie l'encodage avec MiniLM v6
+        mock_faiss_instance.search.assert_called_once()  # Vérifie la recherche KNN avec FAISS
+        mock_gemini_instance.generate_content.assert_called_once()  # Vérifie que Gemini est bien appelé une seule fois
+        mock_file.assert_called_once_with("./backend/FAISS/chunks.json", "r")  # Vérifie l'ouverture correcte du fichier chunks.json
 
-        # Verify the response format
-        self.assertIn('answer', result)
-        self.assertIn('sources', result)
-        self.assertIsInstance(result['sources'], list)
+        print("✅ Test passé : query_database_agent fonctionne correctement avec FAISS, MiniLM et Gemini, et charge bien chunks.json.")
 
 if __name__ == '__main__':
     unittest.main()

@@ -75,7 +75,7 @@ def query_database_agent(query_text= None, model_embedding = None, tokenizer_emb
     
     # Generate the response via the API
     model = genai.GenerativeModel("gemini-2.0-flash")
-    response = model.generate_content(prompt)
+    response = model.generate_content(prompt, )
 
     return response.text
     
