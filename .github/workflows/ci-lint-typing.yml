@@ -1,0 +1,43 @@
+name: Lint & Typing Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**/*.py"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/**/*.py"                    # Activation uniquement si un fichier .py a changé
+jobs:
+  lint-typing:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        task: [linting, typing]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy flake8 black          # installe uniquement les packages nécessaires 
+
+      - name: Run flake8 (linting)
+        if: matrix.task == 'linting'
+        run: flake8 app/
+
+      - name: Run black (formatting check)
+        if: matrix.task == 'linting'
+        run: black --check app/
+
+      - name: Run mypy (typing check)
+        if: matrix.task == 'typing'
+        run: mypy app/

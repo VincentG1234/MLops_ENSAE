@@ -1,0 +1,30 @@
+name: Build and Deploy Docker Image
+
+on:
+  workflow_run:
+    workflows: ["Run Tests"]  # Nom du workflow de tests
+    types:
+      - completed  # Ce workflow se déclenche quand le workflow de tests est terminé
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    needs: test  # Ce job dépend du job "test" du workflow précédent
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        run: |
+          docker build --build-arg API_KEY_GOOGLE=${{ secrets.API_KEY_GOOGLE }} -t gemini_chat_app:latest .
+          docker tag gemini_chat_app:latest vincentgimenes123/gemini_chat_app:latest
+          docker push vincentgimenes123/gemini_chat_app:latest
