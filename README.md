@@ -68,13 +68,12 @@ docker run -p 8000:8000 chatdoc
 
 ## ⚙️ Configuration
 
-(if you do not use docker)
-Install Ollama on your computer
-Then execute on a terminal:
+Create a Free API with your google account on: https://aistudio.google.com/app/apikey?hl=a
 
-```shell
-ollama pull tinyllama
-ollama serve
+Create .env file and write inside:
+
+```md
+API_KEY_GOOGLE= La clé
 ```
 
 ## 🚀 Running the Application
