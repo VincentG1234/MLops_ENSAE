@@ -23,11 +23,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/application:latest .
-        
-      - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/application:latest
+          docker build --build-arg API_KEY_GOOGLE=${{ secrets.API_KEY_GOOGLE }} -t gemini_chat_app:latest .
+          docker tag gemini_chat_app:latest vincentgimenes123/gemini_chat_app:latest
+          docker push vincentgimenes123/gemini_chat_app:latest
