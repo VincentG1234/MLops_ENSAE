@@ -27,7 +27,11 @@ genai.configure(api_key=key)
 FAISS_PATH = "./backend/FAISS"
 
 PROMPT_TEMPLATE = """
-You are an assistant that answers questions based on the following context:
+You are an assistant that answers questions based on the following history:
+
+{history}
+
+Based on that particular context:
 
 {context}
 
