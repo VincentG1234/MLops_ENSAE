@@ -9,7 +9,7 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
-    needs: test  # Ce job dépend du job "test" du workflow précédent
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # Exécute seulement si le précédent a réussi
 
     steps:
       - name: Checkout code
