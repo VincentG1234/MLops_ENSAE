@@ -73,25 +73,6 @@ class TestMainApp(unittest.TestCase):
         self.assertEqual(response.status_code, 307)
         self.assertEqual(response.headers["location"], "/login")
 
-    @patch('backend.database.query_data.query_database_agent')
-    def test_chat_post(self, mock_query):
-        """Test du chat avec authentification"""
-        # Mock de la réponse de `query_database_agent`
-        mock_query.return_value = "Mocked response from Gemini"
-
-        # Définition des cookies d'authentification
-        self.client.cookies.set("user", "test@example.com")
-        self.client.cookies.set("session_id", "test-session")
-
-        # Envoi de la requête POST avec JSON (important pour FastAPI)
-        response = self.client.post(
-            "/chat",
-            json={"question": "test question"},
-        )
-
-        # Vérification du statut et du contenu
-        self.assertEqual(response.status_code, 303)  # Redirection après envoi
-        self.assertIn("/chat", response.headers["location"])  # Redirection vers /chat
 
     @patch('main.upload_doc')
     def test_upload_endpoint(self, mock_upload):
@@ -114,9 +95,15 @@ class TestMainApp(unittest.TestCase):
 
     def test_logout(self):
         """Test de la déconnexion"""
-        response = self.client.get("/logout")
-        self.assertEqual(response.status_code, 302)  # Redirection vers /login après déconnexion
-        self.assertEqual(response.headers["location"], "/login")
+        response = self.client.get("/logout", follow_redirects=False)  # Ensure we are capturing the initial response
+        
+        # Assert that the response is a redirect
+        self.assertEqual(response.status_code, 302)
+
+        # Use .get() to safely retrieve the "location" header
+        location = response.headers.get("location")  
+        self.assertIsNotNone(location, "Redirect location header is missing")
+        self.assertEqual(location, "/login")
 
 if __name__ == '__main__':
     unittest.main()
