@@ -1,5 +1,5 @@
 # Use Python 3.10 slim image as base
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Set working directory in container
 WORKDIR /app
@@ -24,11 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY ./app /app/
-COPY .env /app/
 
 # Create necessary directories
 RUN mkdir -p /app/backend/uploads /app/backend/FAISS
-
 
 # Set permissions
 RUN chmod -R 755 /app

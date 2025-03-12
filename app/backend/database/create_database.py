@@ -98,10 +98,9 @@ def split_text(documents, chunk_size=100, overlap=20):
         
 def save_to_faiss(chunks, chunks_vectorized):
     try:
-        # 🔄 Suppression et réinitialisation de FAISS avant de stocker de nouveaux vecteurs
         dimension = chunks_vectorized.shape[1]
 
-        # 📌 Ajouter les vecteurs dans FAISS et sauvegarder
+        # Ajouter les vecteurs dans FAISS et sauvegarder
         index = faiss.IndexFlatL2(dimension)
         index.add(chunks_vectorized)
 
