@@ -1,0 +1,21 @@
+#| filename: "deployment/ingress.yaml"
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chat-app-ingress
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - gemini_chat_app.lab.sspcloud.fr
+  rules:
+  - host: gemini_chat_app.lab.sspcloud.fr
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gemini-chat-app
+            port:
+              number: 80
