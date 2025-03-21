@@ -7,9 +7,9 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - gemini_chat_app.lab.sspcloud.fr
+    - gemini-chat-app.lab.sspcloud.fr
   rules:
-  - host: gemini_chat_app.lab.sspcloud.fr
+  - host: gemini-chat-app.lab.sspcloud.fr
     http:
       paths:
       - path: /
