@@ -3,10 +3,14 @@ name: Run Tests
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*.*.*'
     paths:
       - "app/**/*.py"
   pull_request:
     branches: [main]
+    tags:
+      - 'v*.*.*'
     paths:
       - "app/**/*.py"       # activation uniquement en cas de changement des *.py
 

@@ -1,3 +1,6 @@
+# Vectorize.py
+# Description: Module to vectorize text data using BERT embeddings.
+
 import numpy as np
 import torch
 from tqdm import tqdm

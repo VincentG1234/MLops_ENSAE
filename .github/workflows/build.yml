@@ -12,8 +12,17 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}  # Exécute seulement si le précédent a réussi
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (with full history and tags)
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Extract git tag
+        id: get_tag
+        run: |
+          TAG=$(git describe --tags --exact-match || echo "")
+          echo "Found tag: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -26,6 +35,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: vincentgimenes123/gemini_chat_app
+          tags: |
+            type=raw,value=${{ steps.get_tag.outputs.tag }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3

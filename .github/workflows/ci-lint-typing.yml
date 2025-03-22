@@ -3,10 +3,14 @@ name: Lint & Typing Check
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*.*.*'
     paths:
       - "app/**/*.py"
   pull_request:
     branches: [main]
+    tags:
+      - 'v*.*.*'
     paths:
       - "app/**/*.py"                    # Activation uniquement si un fichier .py a changé
 jobs:
