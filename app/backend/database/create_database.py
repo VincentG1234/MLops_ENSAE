@@ -1,13 +1,12 @@
 # create_database.py
 import os
+import json
 
 import numpy as np
 from dotenv import load_dotenv
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader
-
-import json
 import faiss
 import sqlite3
 import tiktoken
@@ -16,6 +15,7 @@ nltk.download("punkt")
 from nltk.tokenize import sent_tokenize
 nltk.download('punkt_tab')
 nltk.download('averaged_perceptron_tagger_eng')
+
 from backend.database.vectorize import get_embedding_matrix
 
 FAISS_PATH = "./backend/FAISS"
