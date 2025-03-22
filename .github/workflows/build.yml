@@ -9,8 +9,13 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # Exécute seulement si le précédent a réussi
-
+    jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')    
+    
     steps:
       - name: Checkout code (with full history and tags)
         uses: actions/checkout@v2
