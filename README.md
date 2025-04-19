@@ -1,5 +1,14 @@
+# You want to test the application ???
 
-**https://github.com/VincentG1234/MLops_ENSAE_gitops**
+-  **go to url: https://gemini-chat-app.lab.sspcloud.fr**
+-  **set "test@gmail.com" as username and "azerty" as password**
+-  **Click on the upload button, then choose a file (pdf or txt), then upload itn then create the database**
+-  **Now, you can chat with your document ! Click on "chat" and on the upper right corner and chat!**
+
+
+# Gitops
+
+**Lien Gittops: https://github.com/VincentG1234/MLops_ENSAE_gitops**
 
 # ChatDoc - Document Chat Application
 
