@@ -1,3 +1,6 @@
+
+**https://github.com/VincentG1234/MLops_ENSAE_gitops**
+
 # ChatDoc - Document Chat Application
 
 An intelligent web application that enables users to upload documents and engage in conversations about their content using advanced Large Language Model technology. Built with FastAPI, Firebase authentication, and OpenAI's GPT models.
