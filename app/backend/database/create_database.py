@@ -11,18 +11,22 @@ import faiss
 import sqlite3
 import tiktoken
 import nltk
+
 nltk.download("punkt")
 from nltk.tokenize import sent_tokenize
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
+
+nltk.download("punkt_tab")
+nltk.download("averaged_perceptron_tagger_eng")
 
 from backend.database.vectorize import get_embedding_matrix
 
 FAISS_PATH = "./backend/FAISS"
 DATA_PATH = "./backend/uploads"
 
+
 def main():
     generate_data_store()
+
 
 def generate_data_store(model=None, tokenizer=None):
     documents = load_documents()
@@ -44,58 +48,60 @@ def load_documents():
 
 
 def split_text(documents, chunk_size=100, overlap=20):
-        """Découpe un texte en chunks, d'abord par paragraphes, puis par phrases si nécessaire."""
+    """Découpe un texte en chunks, d'abord par paragraphes, puis par phrases si nécessaire."""
 
-        for doc in documents:
-            text = doc.page_content
-            encoding = tiktoken.get_encoding("cl100k_base")
-            paragraphs = text.split("\n\n")  # Séparer par paragraphes
+    for doc in documents:
+        text = doc.page_content
+        encoding = tiktoken.get_encoding("cl100k_base")
+        paragraphs = text.split("\n\n")  # Séparer par paragraphes
 
-            chunks = []
-            current_chunk = []
-            current_length = 0
+        chunks = []
+        current_chunk = []
+        current_length = 0
 
-            for para in paragraphs:
-                tokenized_para = encoding.encode(para)
-                
-                # Si le paragraphe tient dans un chunk, on l'ajoute directement
-                if len(tokenized_para) <= chunk_size:
-                    if current_length + len(tokenized_para) > chunk_size:
-                        # Sauvegarde le chunk précédent
+        for para in paragraphs:
+            tokenized_para = encoding.encode(para)
+
+            # Si le paragraphe tient dans un chunk, on l'ajoute directement
+            if len(tokenized_para) <= chunk_size:
+                if current_length + len(tokenized_para) > chunk_size:
+                    # Sauvegarde le chunk précédent
+                    chunks.append(encoding.decode(sum(current_chunk, [])))
+                    current_chunk = []
+                    current_length = 0
+
+                current_chunk.append(tokenized_para)
+                current_length += len(tokenized_para)
+            else:
+                # Si le paragraphe est trop long, on le découpe en phrases
+                sentences = sent_tokenize(para)
+                for sentence in sentences:
+                    tokenized_sentence = encoding.encode(sentence)
+                    sentence_length = len(tokenized_sentence)
+
+                    if current_length + sentence_length > chunk_size:
                         chunks.append(encoding.decode(sum(current_chunk, [])))
-                        current_chunk = []
-                        current_length = 0
 
-                    current_chunk.append(tokenized_para)
-                    current_length += len(tokenized_para)
-                else:
-                    # Si le paragraphe est trop long, on le découpe en phrases
-                    sentences = sent_tokenize(para)
-                    for sentence in sentences:
-                        tokenized_sentence = encoding.encode(sentence)
-                        sentence_length = len(tokenized_sentence)
+                        # Overlap avec les derniers tokens du chunk précédent
+                        if chunks and overlap > 0:
+                            overlap_tokens = encoding.encode(
+                                " ".join(chunks[-1].split()[-overlap:])
+                            )
+                            current_chunk = [overlap_tokens]
+                            current_length = len(overlap_tokens)
+                        else:
+                            current_chunk = []
+                            current_length = 0
 
-                        if current_length + sentence_length > chunk_size:
-                            chunks.append(encoding.decode(sum(current_chunk, [])))
+                    current_chunk.append(tokenized_sentence)
+                    current_length += sentence_length
 
-                            # Overlap avec les derniers tokens du chunk précédent
-                            if chunks and overlap > 0:
-                                overlap_tokens = encoding.encode(" ".join(chunks[-1].split()[-overlap:]))
-                                current_chunk = [overlap_tokens]
-                                current_length = len(overlap_tokens)
-                            else:
-                                current_chunk = []
-                                current_length = 0
+        if current_chunk:
+            chunks.append(encoding.decode(sum(current_chunk, [])))
 
-                        current_chunk.append(tokenized_sentence)
-                        current_length += sentence_length
+        return chunks
 
-            if current_chunk:
-                chunks.append(encoding.decode(sum(current_chunk, [])))
 
-            return chunks
-
-        
 def save_to_faiss(chunks, chunks_vectorized):
     try:
         dimension = chunks_vectorized.shape[1]
@@ -107,7 +113,7 @@ def save_to_faiss(chunks, chunks_vectorized):
         if not os.path.exists(FAISS_PATH):
             os.makedirs(FAISS_PATH)
 
-        faiss.write_index(index, FAISS_PATH+ "/index.faiss")
+        faiss.write_index(index, FAISS_PATH + "/index.faiss")
 
         json.dump(chunks, open(FAISS_PATH + "/chunks.json", "w"))
 

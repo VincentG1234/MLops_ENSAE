@@ -9,10 +9,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
 
+import firebase_admin
+from firebase_admin import credentials
+
+
 # For database creation (doc to embeddings and chunks)
 from backend.database.create_database import generate_data_store
+
 # for upload documents and convert them to MD
 from backend.services.file_upload import upload_doc, delete_files
+
 # For chatbot
 from backend.database.query_data import query_database_agent
 from backend.auth.user_auth import init_firebase, login_user, register_user
@@ -30,18 +36,20 @@ print("Chemin DATA_PATH:", DATA_PATH, flush=True)
 print("Loading models for embeddings...", flush=True)
 # Load the model and tokenizer
 MODEL_EMBEDDING = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-TOKENIZER_EMBEDDING =  AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+TOKENIZER_EMBEDDING = AutoTokenizer.from_pretrained(
+    "sentence-transformers/all-MiniLM-L6-v2"
+)
 print("Models for embeddings loaded successfully", flush=True)
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 # Initialiser Firebase
-init_firebase()
+cred = credentials.Certificate("config/firebase_config.json")  # Le fichier JSON ici
+firebase_admin.initialize_app(cred)
 
 app = FastAPI()
 
@@ -51,22 +59,24 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Configurer le répertoire des templates
 templates = Jinja2Templates(directory="templates")
 
-# Suppression des fichiers temporaires au démarrage de l'application 
+
+# Suppression des fichiers temporaires au démarrage de l'application
 @app.on_event("startup")
 async def startup_event():
     logger.info("Application starting, deleting files...")
     delete_files()
     print(os.getcwd(), flush=True)
-    
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
     print("❌ L'application FastAPI s'arrête...")
     delete_files()
 
+
 # Dépendance pour obtenir l'utilisateur actuel à partir des cookies
 def get_current_user(request: Request):
-    user = request.cookies.get('user')
+    user = request.cookies.get("user")
     return user
 
 
@@ -85,14 +95,18 @@ async def login_get(request: Request):
 
 
 @app.post("/login")
-async def login_post(request: Request, email: str = Form(...), password: str = Form(...)):
+async def login_post(
+    request: Request, email: str = Form(...), password: str = Form(...)
+):
     user = login_user(email, password)
     if user:
         response = RedirectResponse(url="/", status_code=302)
         response.set_cookie(key="user", value=user)
         return response
     else:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Wrong username or password"})
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": "Wrong username or password"}
+        )
 
 
 # Routes d'inscription
@@ -102,15 +116,23 @@ async def register_get(request: Request):
 
 
 @app.post("/register")
-async def register_post(request: Request, email: str = Form(...), password: str = Form(...),
-                        confirm_password: str = Form(...)):
+async def register_post(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+):
     if password != confirm_password:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Unmatching passwords"})
+        return templates.TemplateResponse(
+            "register.html", {"request": request, "error": "Unmatching passwords"}
+        )
     user = register_user(email, password)
     if user:
         return RedirectResponse(url="/login", status_code=302)
     else:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Sign up failed"})
+        return templates.TemplateResponse(
+            "register.html", {"request": request, "error": "Sign up failed"}
+        )
 
 
 # Téléchargement de documents
@@ -122,12 +144,18 @@ async def upload_get(request: Request, user: str = Depends(get_current_user)):
 
 
 @app.post("/upload")
-async def upload_post(request: Request, file: UploadFile = File(...), user: str = Depends(get_current_user)):
+async def upload_post(
+    request: Request,
+    file: UploadFile = File(...),
+    user: str = Depends(get_current_user),
+):
     if not user:
         return RedirectResponse(url="/login")
-    
+
     message = upload_doc(file)
-    return templates.TemplateResponse("upload.html", {"request": request, "message": message, "user": user})
+    return templates.TemplateResponse(
+        "upload.html", {"request": request, "message": message, "user": user}
+    )
 
 
 # Chat avec le document
@@ -136,8 +164,12 @@ chat_sessions = {}
 
 
 @app.get("/chat", response_class=HTMLResponse)
-async def chat_get(request: Request, user: str = Depends(get_current_user), session_id: str = Cookie(None),
-                   error: str = None):
+async def chat_get(
+    request: Request,
+    user: str = Depends(get_current_user),
+    session_id: str = Cookie(None),
+    error: str = None,
+):
     # Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
     if not user:
         return RedirectResponse(url="/login")
@@ -154,7 +186,7 @@ async def chat_get(request: Request, user: str = Depends(get_current_user), sess
         "request": request,
         "user": user,
         "chat_history": chat_history,
-        "error": error
+        "error": error,
     }
 
     # Créer une réponse avec un cookie pour la session
@@ -164,8 +196,13 @@ async def chat_get(request: Request, user: str = Depends(get_current_user), sess
 
 
 @app.post("/chat")
-async def chat_post(request: Request, question: str = Form(...), user: str = Depends(get_current_user),
-                    model_name: str = Form(...), session_id: str = Cookie(None)):
+async def chat_post(
+    request: Request,
+    question: str = Form(...),
+    user: str = Depends(get_current_user),
+    model_name: str = Form(...),
+    session_id: str = Cookie(None),
+):
     # Logging
     logger.info("----------------")
     logger.info("New chat request received")
@@ -188,17 +225,16 @@ async def chat_post(request: Request, question: str = Form(...), user: str = Dep
     chat_history = chat_sessions.get(session_id, [])
 
     # Add user question to history
-    chat_history.append({
-        'sender': 'user',
-        'question': question
-    })
+    chat_history.append({"sender": "user", "question": question})
 
     try:
         # Process the question
-        result = query_database_agent(query_text= question,
-                                       chat_history=chat_history,
-                                      tokenizer_embedding=TOKENIZER_EMBEDDING,
-                                       model_embedding=MODEL_EMBEDDING)
+        result = query_database_agent(
+            query_text=question,
+            chat_history=chat_history,
+            tokenizer_embedding=TOKENIZER_EMBEDDING,
+            model_embedding=MODEL_EMBEDDING,
+        )
 
         # Check if result is an error message or a proper response
         if isinstance(result, str):
@@ -206,10 +242,12 @@ async def chat_post(request: Request, question: str = Form(...), user: str = Dep
             return RedirectResponse(url=f"/chat?error={result}", status_code=303)
 
         # Add assistant's response to history
-        chat_history.append({
-            'sender': 'assistant',
-            'answer': result.get('answer', ''),
-        })
+        chat_history.append(
+            {
+                "sender": "assistant",
+                "answer": result.get("answer", ""),
+            }
+        )
 
         # Save chat history
         chat_sessions[session_id] = chat_history
@@ -219,7 +257,10 @@ async def chat_post(request: Request, question: str = Form(...), user: str = Dep
 
     except Exception as e:
         logger.error(f"Error in chat processing: {str(e)}")
-        return RedirectResponse(url="/chat?error=An error occurred while processing your request", status_code=303)
+        return RedirectResponse(
+            url="/chat?error=An error occurred while processing your request",
+            status_code=303,
+        )
 
 
 # Route de déconnexion
@@ -241,9 +282,11 @@ async def execute_function(request: Request, user: str = Depends(get_current_use
     if not os.path.exists(upload_directory):
         return templates.TemplateResponse(
             "upload.html",
-            {"request": request,
-             "message": "There is no document uploaded. You must upload a document and then click on upload before generating the database.",
-             "user": user}
+            {
+                "request": request,
+                "message": "There is no document uploaded. You must upload a document and then click on upload before generating the database.",
+                "user": user,
+            },
         )
 
     # Générer la base de données
@@ -252,5 +295,9 @@ async def execute_function(request: Request, user: str = Depends(get_current_use
     # Return the result back to the template
     return templates.TemplateResponse(
         "upload.html",
-        {"request": request, "message": f"The faiss database has been created with success", "user": user}
+        {
+            "request": request,
+            "message": f"The faiss database has been created with success",
+            "user": user,
+        },
     )

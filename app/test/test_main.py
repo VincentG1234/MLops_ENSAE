@@ -14,6 +14,7 @@ from main import app  # Import correct du module principal
 
 print(os.getcwd())  # Debugging: affiche le chemin de travail actuel
 
+
 class TestMainApp(unittest.TestCase):
     def setUp(self):
         """Set up test environment"""
@@ -44,25 +45,26 @@ class TestMainApp(unittest.TestCase):
         self.assertIn(b'<input type="email"', response.content)
         self.assertIn(b'<input type="password"', response.content)
 
-    @patch('main.login_user')
+    @patch("main.login_user")
     def test_login_post_success(self, mock_login):
         """Test d'une tentative de connexion réussie"""
         mock_login.return_value = "test@example.com"
         response = self.client.post(
             "/login",
             data={"email": "test@example.com", "password": "password"},
-            follow_redirects=False
+            follow_redirects=False,
         )
-        self.assertEqual(response.status_code, 302)  # Redirection après connexion réussie
+        self.assertEqual(
+            response.status_code, 302
+        )  # Redirection après connexion réussie
         self.assertEqual(response.headers["location"], "/")
 
-    @patch('main.login_user')
+    @patch("main.login_user")
     def test_login_post_failure(self, mock_login):
         """Test d'une tentative de connexion échouée"""
         mock_login.return_value = None
         response = self.client.post(
-            "/login",
-            data={"email": "test@example.com", "password": "wrong_password"}
+            "/login", data={"email": "test@example.com", "password": "wrong_password"}
         )
         self.assertEqual(response.status_code, 200)  # Reste sur la page login
         self.assertIn(b"Log In", response.content)
@@ -73,11 +75,12 @@ class TestMainApp(unittest.TestCase):
         self.assertEqual(response.status_code, 307)
         self.assertEqual(response.headers["location"], "/login")
 
-
-    @patch('main.upload_doc')
+    @patch("main.upload_doc")
     def test_upload_endpoint(self, mock_upload):
         """Test du téléversement de fichiers"""
-        mock_upload.return_value = "File 'test.txt' uploaded and processed successfully."
+        mock_upload.return_value = (
+            "File 'test.txt' uploaded and processed successfully."
+        )
 
         # Simulation de l'authentification
         self.client.cookies.set("user", "test@example.com")
@@ -85,25 +88,30 @@ class TestMainApp(unittest.TestCase):
         # Création du fichier de test
         test_content = b"Test content"
         response = self.client.post(
-            "/upload",
-            files={"file": ("test.txt", test_content, "text/plain")}
+            "/upload", files={"file": ("test.txt", test_content, "text/plain")}
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'<div class="alert alert-info">', response.content)
-        self.assertIn(b"File &#39;test.txt&#39; uploaded and processed successfully.", response.content)
+        self.assertIn(
+            b"File &#39;test.txt&#39; uploaded and processed successfully.",
+            response.content,
+        )
 
     def test_logout(self):
         """Test de la déconnexion"""
-        response = self.client.get("/logout", follow_redirects=False)  # Ensure we are capturing the initial response
-        
+        response = self.client.get(
+            "/logout", follow_redirects=False
+        )  # Ensure we are capturing the initial response
+
         # Assert that the response is a redirect
         self.assertEqual(response.status_code, 302)
 
         # Use .get() to safely retrieve the "location" header
-        location = response.headers.get("location")  
+        location = response.headers.get("location")
         self.assertIsNotNone(location, "Redirect location header is missing")
         self.assertEqual(location, "/login")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
