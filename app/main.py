@@ -238,16 +238,12 @@ async def chat_post(
             model_embedding=MODEL_EMBEDDING,
         )
 
-        # Check if result is an error message or a proper response
-        if isinstance(result, str):
-            chat_sessions[session_id] = chat_history
-            return RedirectResponse(url=f"/chat?error={result}", status_code=303)
 
         # Add assistant's response to history
         chat_history.append(
             {
                 "sender": "assistant",
-                "answer": result.get("answer", ""),
+                "answer": result,
             }
         )
 
@@ -273,33 +269,25 @@ async def logout(request: Request):
     return response
 
 
-# Generate faiss data base
 @app.post("/generate-faiss")
 async def execute_function(request: Request, user: str = Depends(get_current_user)):
     if not user:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url="/login", status_code=302)
 
-    # Vérifie si le répertoire "uploads" existe. S'il n'existe pas, retourne un message d'erreur à l'user pour lui dire de téléverser un document
     upload_directory = "./backend/uploads"
     if not os.path.exists(upload_directory):
         return templates.TemplateResponse(
+            request,
             "upload.html",
             {
-                "request": request,
                 "message": "There is no document uploaded. You must upload a document and then click on upload before generating the database.",
                 "user": user,
             },
         )
 
-    # Générer la base de données
+    # Génération de la base FAISS
     result = generate_data_store(MODEL_EMBEDDING, TOKENIZER_EMBEDDING)
 
-    # Return the result back to the template
-    return templates.TemplateResponse(
-        "upload.html",
-        {
-            "request": request,
-            "message": f"The faiss database has been created with success",
-            "user": user,
-        },
-    )
+    # Redirige vers /chat après succès
+    return RedirectResponse(url="/chat", status_code=303)
+

@@ -90,7 +90,8 @@ pytest
 
 ### Local Development
 ```bash
-python -m uvicorn app.main:app --reload
+cd app
+python -m uvicorn main:app --reload
 ```
 
 ### Access it online
