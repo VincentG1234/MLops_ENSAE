@@ -238,7 +238,6 @@ async def chat_post(
             model_embedding=MODEL_EMBEDDING,
         )
 
-
         # Add assistant's response to history
         chat_history.append(
             {
@@ -290,4 +289,3 @@ async def execute_function(request: Request, user: str = Depends(get_current_use
 
     # Redirige vers /chat après succès
     return RedirectResponse(url="/chat", status_code=303)
-
