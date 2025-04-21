@@ -1,4 +1,4 @@
-# main.py
+# main.py - principal script
 import logging
 import os
 import uuid
