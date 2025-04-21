@@ -48,16 +48,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialiser Firebase
-cred = credentials.Certificate("config/firebase_config.json")  # Le fichier JSON ici
+cred = credentials.Certificate("app/config/firebase_config.json")  # Le fichier JSON ici
 firebase_admin.initialize_app(cred)
 
 app = FastAPI()
 
 # Monter le répertoire 'static' sous le chemin '/static'
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=BASE_DIR + "/static"), name="static")
 
 # Configurer le répertoire des templates
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=BASE_DIR + "/templates")
 
 
 # Suppression des fichiers temporaires au démarrage de l'application
