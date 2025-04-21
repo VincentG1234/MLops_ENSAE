@@ -1,23 +1,23 @@
-# You want to test the application ???
+# You want to test the application ?
 
--  **go to url: https://gemini-chat-app.lab.sspcloud.fr**
--  **set "test@gmail.com" as username and "azerty" as password**
--  **Click on the upload button, then choose a file (pdf or txt), then upload itn then create the database**
--  **Now, you can chat with your document ! Click on "chat" and on the upper right corner and chat!**
+-  **Go to URL: https://gemini-chat-app.lab.sspcloud.fr**
+-  **Set "test@gmail.com" as username and "azerty" as password**
+-  **Click on the upload button, choose a file (PDF or TXT), upload it, then create the database**
+-  **Now, you can chat with your document! Click on "chat" in the upper right corner and start chatting!**
 
 
-# Gitops
+# GitOps
 
-**Lien Gittops: https://github.com/VincentG1234/MLops_ENSAE_gitops**
+**GitOps Repository: https://github.com/VincentG1234/MLops_ENSAE_gitops**
 
 # ChatDoc - Document Chat Application
 
-An intelligent web application that enables users to upload documents and engage in conversations about their content using advanced Large Language Model technology. Built with FastAPI, Firebase authentication, and OpenAI's GPT models.
+An intelligent web application that enables users to upload documents and engage in conversations about their content using advanced Large Language Model technology. Built with FastAPI, Firebase authentication, and Gemini's models.
 
 ## 🌟 Features
 
 - **Secure Authentication**: User management through Firebase authentication
-- **Document Processing**: 
+- **Document Processing**:
   - Support for multiple file formats (PDF, DOCX, TXT, MD)
   - Automatic conversion to markdown format
   - Smart chunking for optimal processing
@@ -32,13 +32,12 @@ An intelligent web application that enables users to upload documents and engage
 ## 🛠️ Prerequisites
 
 - Python 3.10 or 3.11
-- OpenAI API key
+- Google API Key
 - Firebase project credentials
 - Docker (optional, for containerized deployment)
+- Kubernetes cluster access (for production deployment)
 
-## 📦 Installation
-
-### Option 1: Local Development
+## 📦 Installation for Local Development
 
 1. **Clone the Repository**
 ```bash
@@ -66,139 +65,101 @@ pip install -r requirements.txt
 pip install "unstructured[md]"
 ```
 
-### Option 2: Docker Deployment (make sure to start your Docker app before)
-
-1. **Build the Docker Image**
-```bash
-docker build -t chatdoc .
-```
-
-2. **Run the Container**
-```bash
-docker run -p 8000:8000 chatdoc
-```
-
 ## ⚙️ Configuration
 
-Create a Free API with your google account on: https://aistudio.google.com/app/apikey?hl=a
+Create a free API key with your Google account at: https://aistudio.google.com/app/apikey?hl=a
 
-Create .env file and write inside:
+Create a .env file and add the following:
 
 ```md
-API_KEY_GOOGLE= La clé
+API_KEY_GOOGLE=your_api_key_here
+```
+
+Contact us for the Firebase_config.json file (it's just a file giving the credentials for the Google Authentication service), then upload it in the config folder:
+```md
+app/config/firebase_config.json
+```
+
+## Pytest
+Run the following command to execute the tests manually.
+```bash
+pytest
 ```
 
 ## 🚀 Running the Application
 
 ### Local Development
 ```bash
-cd app
-python -m uvicorn main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
-### Docker Container
-The application will automatically start when running the container. To acces to the app, make sure to click on the following links and **not the ones in your terminal**. 
+### Access it online
+Go here: https://gemini-chat-app.lab.sspcloud.fr
 
-Access the application:
-- Web Interface: `http://127.0.0.1:8000`
-- API Documentation: `http://127.0.0.1:8000/docs`
+## 🌐 Production Deployment
 
-# 💡 ChatDoc Usage Guide
+Our application follows GitOps principles using ArgoCD and Kubernetes manifests to manage production infrastructure.
 
-## 1. Authentication
+### CI/CD Workflow
 
-### **Sign Up**
-- Navigate to `/register`.
-- Enter your email and password, then confirm your password.
-- Click **"Sign Up"** to create your account.
+1. **Pre‑commit checks**  
+   - On every commit, `pre-commit-config.yaml` runs Black to enforce code formatting.  
+2. **GitHub Actions**  
+   - Linting and unit tests execute via the workflows in `.github/workflows/`.  
+   - Only tagged commits (e.g., `v1.2.3`) proceed to deployment.  
 
-### **Log In**
-- Navigate to `/login`.
-- Enter your credentials and click **"Log In"** to access your account.
+### GitOps Repository
 
-<div style="display: flex; flex-wrap: nowrap; justify-content: space-between; align-items: center;">
-  <img src="example_images/signup_example.png" alt="Sign Up" style="width: 42%; margin-right: 10px;">
-  <img src="example_images/login_example.png" alt="Log In" style="width: 48%;">
-</div>
+All production deployment manifests live in a dedicated repo:  
+🔗 [MLops_ENSAE_gitops](https://github.com/VincentG1234/MLops_ENSAE_gitops)
 
----
+#### Repository Layout
 
-## 2. Home Page
+```text
+MLops_ENSAE_gitops/
+├── application.yaml      # ArgoCD Application definition
+└── deployment/
+    ├── deployment.yaml   # Kubernetes Deployment spec
+    ├── service.yaml      # Kubernetes Service spec
+    └── ingress.yaml      # Ingress rules
+````
 
-After logging in, you'll land on the home page, where you can start chatting with your documents or upload more files.
+#### Deployment Steps
+1.	**Build & Push:** Container image is built and pushed to Docker Hub.
+2.	**Sync:** ArgoCD continuously watches the GitOps repo.
+3.	**Apply:** On manifest changes, ArgoCD updates the cluster.
+4.	**Route:** Ingress controller exposes the app to end users.
 
-![Welcome Page](example_images/firstscreen_example.png)
+### Accessing Production
+1.	Go to: https://gemini-chat-app.lab.sspcloud.fr
+2.	Sign in with the shared test account:
+   - Username: test@gmail.com
+   - Password: azerty
+3.	Upload a document and begin chatting!
 
----
+⸻
 
-## 3. Document Management
+### 🔧 Troubleshooting
+  - Inspect logs: kubectl logs -l app=gemini-chat-app -n <namespace>
+  - Check ArgoCD status: In the ArgoCD UI, ensure the Application is Synced and Healthy.
+  - Validate secrets & configs: Confirm all Kubernetes Secrets and ConfigMaps are present and up‑to‑date.
 
-### **Upload Documents**
-- Click **"Upload Document"** on the home page.
-- Select your file (PDF, DOCX, TXT, or MD).
-- Click **"Upload"** and wait for the confirmation message.
-
-![Upload Document](example_images/upload_example.png)
-
-### **Generate Database**
-- After uploading documents, click **"Create Database"**.
-- Wait for the confirmation message.
-- Your documents are now ready for advanced search and chat functionalities.
-
----
-
-## 4. Chat Interface
-
-### **Start a Chat**
-- Click **"Start Chatting"** on the home page.
-- Type your question in the input field and press **Enter** or click the send button.
-- View the AI's response, which includes source attribution.
-![Upload Document](example_images/chat_example.png)
-
-## 🔧 Project Structure
-
-```
-Project-I-SL/
-├── .venv/              # Python virtual environment
-├── app/
-│   ├── config/
-│   │   └── firebase_config.json
-│   ├── static/
-│   │   ├── css/
-│   │   │   └── styles.css
-│   │   └── videos/
-│   │       └── background.mp4
-│   ├── templates/
-│   │   ├── base.html
-│   │   ├── chat.html
-│   │   ├── home.html
-│   │   ├── login.html
-│   │   ├── register.html
-│   │   └── upload.html
-│   ├── create_database.py
-│   ├── file_upload.py
-│   ├── main.py
-│   ├── query_data.py
-|   ├── test_main.py
-|   ├── test_query_data.py
-│   └── user_auth.py
-├── example_images/
-│   ├── firstscreen_example.png
-│   ├── login_example.png
-│   ├── signup_example.png
-│   ├── upload_example.png
-│   └── chat_example.png
-├── .env
-├── .gitignore
-├── API Keys.txt
-├── Dockerfile
-├── README.md
-└── requirements.txt
-```
+Still need help? Reach out to us by WhatsApp or email.
 
 ## 📝 License
 
-This project is part of the Infrastructure & Systèmes Logiciels course. Created by:
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Team
+
+### MLOps Enhancement Team (Project for semester 2)
+The MLOps implementation, including the GitOps deployment and production infrastructure, was developed by:
+- Pierre Clayton (pierre.clayton@ensae.fr)
+- Vincent Gimenes (vincent.gimenes@ensae.fr)
+- Anna Mosaki (anna.mosaki@ensae.fr)
+
+### Initial Development Team (Initial Project from semester 1)
+The initial version of this project was developed as part of the Infrastructure & Systèmes Logiciels course by:
 - Marion Chabrol
 - Pierre Clayton
 - Vincent Gimenes
@@ -208,4 +169,3 @@ This project is part of the Infrastructure & Systèmes Logiciels course. Created
 ## 🔗 Links
 
 - GitHub Repository: [https://github.com/Pierre-Clayton/Project-I-SL](https://github.com/Pierre-Clayton/Project-I-SL)
-
