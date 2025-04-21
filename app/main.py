@@ -48,7 +48,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialiser Firebase
-cred = credentials.Certificate("app/config/firebase_config.json")  # Le fichier JSON ici
+cred = credentials.Certificate("config/firebase_config.json")  # Le fichier JSON ici
 firebase_admin.initialize_app(cred)
 
 app = FastAPI()
