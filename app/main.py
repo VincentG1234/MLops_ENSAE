@@ -16,7 +16,7 @@ from firebase_admin import credentials
 # For database creation (doc to embeddings and chunks)
 from backend.database.create_database import generate_data_store
 
-# for upload documents and convert them to MD
+# For upload documents and convert them to MD
 from backend.services.file_upload import upload_doc, delete_files
 
 # For chatbot
@@ -24,7 +24,9 @@ from backend.database.query_data import query_database_agent
 from backend.auth.user_auth import init_firebase, login_user, register_user
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Donne "app/"
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)  # Donne "app/" à verifier si avec /
 DATA_PATH = os.path.join(BASE_DIR, "backend", "uploads")  # Assure "app/backend/uploads"
 FAISS_PATH = os.path.join(BASE_DIR, "backend", "FAISS")  # Assure "app/backend/FAISS"
 
