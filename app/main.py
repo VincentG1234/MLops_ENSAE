@@ -56,6 +56,7 @@ raw_b64 = os.getenv("FIREBASE_CONFIG_B64")
 if not raw_b64:
     raise RuntimeError("FIREBASE_CONFIG_B64 is missing")
 config = json.loads(base64.b64decode(raw_b64))
+print(config, flush=True)
 cred = credentials.Certificate(config)
 initialize_app(cred)
 
