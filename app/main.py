@@ -38,6 +38,7 @@ os.makedirs(DATA_PATH, exist_ok=True)
 print("Chemin DATA_PATH:", DATA_PATH, flush=True)
 
 print("Loading models for embeddings...", flush=True)
+
 # Load the model and tokenizer
 MODEL_EMBEDDING = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 TOKENIZER_EMBEDDING = AutoTokenizer.from_pretrained(
@@ -56,7 +57,6 @@ raw_b64 = os.getenv("FIREBASE_CONFIG_B64")
 if not raw_b64:
     raise RuntimeError("FIREBASE_CONFIG_B64 is missing")
 config = json.loads(base64.b64decode(raw_b64))
-print(config, flush=True)
 cred = credentials.Certificate(config)
 initialize_app(cred)
 
