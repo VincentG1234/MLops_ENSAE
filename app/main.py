@@ -2,16 +2,17 @@
 import logging
 import os
 import uuid
+import json
+import base64
 
 from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
-
+from dotenv import load_dotenv
 import firebase_admin
-from firebase_admin import credentials
-
+from firebase_admin import credentials, initialize_app
 
 # For database creation (doc to embeddings and chunks)
 from backend.database.create_database import generate_data_store
@@ -23,6 +24,7 @@ from backend.services.file_upload import upload_doc, delete_files
 from backend.database.query_data import query_database_agent
 from backend.auth.user_auth import init_firebase, login_user, register_user
 
+load_dotenv()
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
@@ -49,9 +51,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialiser Firebase
-cred = credentials.Certificate("config/firebase_config.json")  # Le fichier JSON ici
-firebase_admin.initialize_app(cred)
+
+raw_b64 = os.getenv("FIREBASE_CONFIG_B64")
+if not raw_b64:
+    raise RuntimeError("FIREBASE_CONFIG_B64 is missing")
+config = json.loads(base64.b64decode(raw_b64))
+cred = credentials.Certificate(config)
+initialize_app(cred)
 
 app = FastAPI()
 

@@ -4,3 +4,4 @@ uploads/
 .env
 index.faiss
 chunks.json
+app/config/firebase_config.json
