@@ -33,7 +33,9 @@ RUN chmod -R 755 /app
 
 # Définir la clé API comme variable d'environnement
 ARG API_KEY_GOOGLE
+ARG FIREBASE_CONFIG_B64
 ENV API_KEY_GOOGLE=${API_KEY_GOOGLE}
+ENV FIREBASE_CONFIG_B64=${FIREBASE_CONFIG_B64}
 
 # Expose the port the app runs on
 EXPOSE 8000
