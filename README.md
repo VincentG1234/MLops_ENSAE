@@ -41,7 +41,7 @@ An intelligent web application that enables users to upload documents and engage
 
 1. **Clone the Repository**
 ```bash
-git clone https://github.com/Pierre-Clayton/Project-I-SL.git
+git clone https://github.com/VincentG1234/MLops_ENSAE.git
 cd Project-I-SL
 ```
 
