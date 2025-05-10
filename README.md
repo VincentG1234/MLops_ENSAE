@@ -42,7 +42,7 @@ An intelligent web application that enables users to upload documents and engage
 1. **Clone the Repository**
 ```bash
 git clone https://github.com/VincentG1234/MLops_ENSAE.git
-cd Project-I-SL
+cd MLops_ENSAE
 ```
 
 2. **Set Up Virtual Environment**
